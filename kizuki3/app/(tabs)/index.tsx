@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, FlatList, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ChoreCard, type Chore } from '@/components/ui/chore-card';
 
 // Simple sample data for MVP. Later persist with AsyncStorage / Zustand.
-const sampleChores: Chore[] = [
+const initialChores: Chore[] = [
   {
     id: '1',
     title: '食器洗い',
@@ -48,7 +49,7 @@ function offsetDate(daysAgo: number) {
 
 export default function HomeScreen() {
   return (
-    <ThemedView style={styles.container}>
+    <SafeAreaView style={{flex:1}}><ThemedView style={styles.container}>
       <View style={styles.headerRow}>
         <ThemedText type="title">家事感謝アプリ</ThemedText>
         <Pressable style={styles.plusButton} onPress={() => alert('新規家事追加（未実装）')}>
@@ -62,7 +63,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.list}
         renderItem={({ item }) => <ChoreCard chore={item} />}
       />
-    </ThemedView>
+    </ThemedView></SafeAreaView>
   );
 }
 

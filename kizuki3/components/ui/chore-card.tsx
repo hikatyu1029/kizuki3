@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
@@ -34,7 +34,7 @@ export function getChoreColor(chore: Chore, today = new Date()): string {
   return '#b91c1c'; // dark red
 }
 
-export function ChoreCard({ chore }: { chore: Chore }) {
+export function ChoreCard({ chore, onPress }: { chore: Chore; onPress?: () => void }) {
   const color = getChoreColor(chore);
   const last = new Date(chore.lastDoneDate + 'T00:00:00');
   const today = new Date();
@@ -44,20 +44,22 @@ export function ChoreCard({ chore }: { chore: Chore }) {
   const formattedDate = last.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
 
   return (
-    <ThemedView style={styles.card}>
-      <View style={[styles.leftBar, { backgroundColor: color }]} />
-      <View style={styles.content}>
-        <ThemedText type="subtitle" style={styles.title}>{chore.title}</ThemedText>
-        {chore.description ? <ThemedText style={styles.desc}>{chore.description}</ThemedText> : null}
-        <View style={styles.row}>
-          <ThemedText style={styles.meta}>前回：{chore.lastDoneBy}</ThemedText>
-          <ThemedText style={styles.meta}>最終：{formattedDate}</ThemedText>
-          <View style={styles.badge}>
-            <ThemedText style={styles.badgeText}>{days}日ぶり</ThemedText>
+    <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}> 
+      <ThemedView style={styles.card}>
+        <View style={[styles.leftBar, { backgroundColor: color }]} />
+        <View style={styles.content}>
+          <ThemedText type="subtitle" style={styles.title}>{chore.title}</ThemedText>
+          {chore.description ? <ThemedText style={styles.desc}>{chore.description}</ThemedText> : null}
+          <View style={styles.row}>
+            <ThemedText style={styles.meta}>前回：{chore.lastDoneBy}</ThemedText>
+            <ThemedText style={styles.meta}>最終：{formattedDate}</ThemedText>
+            <View style={styles.badge}>
+              <ThemedText style={styles.badgeText}>{days}日ぶり</ThemedText>
+            </View>
           </View>
         </View>
-      </View>
-    </ThemedView>
+      </ThemedView>
+    </Pressable>
   );
 }
 
