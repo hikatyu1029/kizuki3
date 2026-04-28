@@ -48,22 +48,31 @@ function offsetDate(daysAgo: number) {
 }
 
 export default function HomeScreen() {
-  return (
-    <SafeAreaView style={{flex:1}}><ThemedView style={styles.container}>
-      <View style={styles.headerRow}>
-        <ThemedText type="title">家事感謝アプリ</ThemedText>
-        <Pressable style={styles.plusButton} onPress={() => alert('新規家事追加（未実装）')}>
-          <ThemedText type="subtitle">＋</ThemedText>
-        </Pressable>
-      </View>
+  const [chores, setChores] = useState<Chore[]>(initialChores);
 
-      <FlatList
-        data={sampleChores}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => <ChoreCard chore={item} />}
-      />
-    </ThemedView></SafeAreaView>
+  function handleComplete(id: string) {
+    const today = new Date().toISOString().slice(0, 10);
+    setChores((prev) => prev.map((c) => (c.id === id ? { ...c, lastDoneDate: today, lastDoneBy: 'あなた' } : c)));
+  }
+
+  return (
+    <SafeAreaView style={{flex:1}}>
+      <ThemedView style={styles.container}>
+        <View style={styles.headerRow}>
+          <ThemedText type="title">家事感謝アプリ</ThemedText>
+          <Pressable style={styles.plusButton} onPress={() => alert('新規家事追加（未実装）')}>
+            <ThemedText type="subtitle">＋</ThemedText>
+          </Pressable>
+        </View>
+
+        <FlatList
+          data={chores}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => <ChoreCard chore={item} onPress={() => handleComplete(item.id)} />}
+        />
+      </ThemedView>
+    </SafeAreaView>
   );
 }
 
