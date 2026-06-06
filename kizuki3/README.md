@@ -1,50 +1,63 @@
-# Welcome to your Expo app 👋
+# 家事感謝アプリ (kizuki3)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+家族の家事を可視化し、誰がいつやったかを記録・共有するアプリ。
 
-## Get started
+## 技術スタック
 
-1. Install dependencies
+- **React Native / Expo** (TypeScript)
+- **Expo Router** (ファイルベースルーティング)
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## 起動方法
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+iOS シミュレータ・Android エミュレータ・Expo Go で動作確認可能。
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## 実装済み機能
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 家事一覧表示
+- ホーム画面に家事カードの一覧を表示（`FlatList`）
+- 各カードに以下の情報を表示
+  - 家事名・説明
+  - 最終実施者（前回誰がやったか）
+  - 最終実施日
+  - 最終実施からの経過日数（〇日ぶり）
 
-## Join the community
+### 緊急度カラーインジケーター
+- 各カードの左端にカラーバーを表示し、頻度に対する経過時間で色が変わる
+  - 緑 (`#22c55e`)：期間の 80% 以内（余裕あり）
+  - 黄 (`#f59e0b`)：期間内
+  - 赤 (`#ef4444`)：期間を少し超過（+2日以内）
+  - 濃赤 (`#b91c1c`)：大幅超過
 
-Join our community of developers creating universal apps.
+### 家事頻度の設定
+- 以下の頻度タイプをサポート
+  - `daily`（毎日）
+  - `every3days`（3日ごと）
+  - `weekly`（週1）
+  - `biweekly`（隔週）
+  - `monthly`（月1）
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### 完了タップ
+- カードをタップすると「完了」として記録
+  - `lastDoneDate` が今日の日付に更新される
+  - `lastDoneBy` が「あなた」に更新される
+  - カラーインジケーターがリアルタイムで更新される
+
+### ライト / ダークモード
+- システムのカラースキームに追従
+- `ThemedText` / `ThemedView` コンポーネントで対応
+
+---
+
+## 未実装（今後の予定）
+
+- 新規家事の追加（＋ボタンは UI のみ）
+- データの永続化（AsyncStorage / Zustand 等）
+- 家族メンバーの管理
+- 通知機能
