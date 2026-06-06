@@ -63,9 +63,68 @@ kizuki3/
 ## データ永続化の方針
 
 - **現在**: `useState` のみ（インメモリ）。アプリ再起動でデータはリセットされる
-- **将来**: AsyncStorage または Zustand での永続化を予定
-- 永続化レイヤーを追加する際は、ストレージの読み書きを `hooks/` に切り出し、`index.tsx` は状態管理に集中させる
-- 永続化の実装前にこの CLAUDE.md を更新する
+- **将来**: Firebase Firestore でのリアルタイム同期（マルチデバイス・マルチ家族対応）
+- 永続化レイヤーを追加する際は、読み書きを `hooks/` に切り出し、`index.tsx` は状態管理に集中させる
+
+## Firebase アーキテクチャ設計
+
+### 認証
+- Google Sign In + Apple Sign In（App Store審査要件でAppleは必須）
+- サインイン後に「家族を作成」または「招待コードで参加」を選択
+
+### 認証フロー
+```
+起動
+ └─ 未ログイン → Google / Apple でサインイン
+       └─ familyId 未設定 → 「家族を作成」or「招待コードで参加」
+             └─ ホーム画面（家事リスト）
+```
+
+### Firestoreデータ構造
+```
+/users/{userId}
+  displayName: string
+  photoURL?: string
+  familyId?: string          // 参加済みなら設定
+  provider: 'apple' | 'google'
+  createdAt: timestamp
+  plan: 'free' | 'premium'   // Freemium管理
+
+/families/{familyId}
+  name: string               // 例：「山田家」
+  inviteCode: string         // 6桁ランダム文字列
+  ownerUserId: string
+  memberIds: string[]
+  createdAt: timestamp
+
+/families/{familyId}/chores/{choreId}
+  title: string
+  description?: string
+  frequency: Frequency
+  lastDoneDate: string
+  lastDoneByUserId: string
+  lastDoneByName: string     // 表示用（denormalized）
+  updatedAt: timestamp
+```
+
+### セキュリティルール（必須）
+```js
+match /families/{familyId}/chores/{choreId} {
+  allow read, write: if request.auth.uid in
+    get(/databases/$(database)/documents/families/$(familyId)).data.memberIds;
+}
+```
+
+### Freemiumの境界線
+| 機能 | 無料 | プレミアム |
+|------|------|----------|
+| 家事の登録数 | 5件まで | 無制限 |
+| 家族メンバー数 | 3人まで | 無制限 |
+| 統計・完了履歴 | なし | あり |
+| ホームウィジェット | なし | あり |
+
+- 課金管理は **RevenueCat** を使用（App Store / Google Play 両対応）
+- RevenueCat Webhook → Cloud Functions → Firestore の `plan` フィールドを更新
 
 ## git / ブランチ運用
 
@@ -96,8 +155,19 @@ kizuki3/
 - [x] 家事を完了済みにタップ
 - [x] 新規家事追加モーダル
 
-## 未実装 / 今後の予定
+## 今後の実装ロードマップ
 
-- [ ] データ永続化（AsyncStorage）
-- [ ] 家族メンバー管理
-- [ ] プッシュ通知（期限超過リマインダー）
+各フェーズに対応する GitHub Issue あり（ラベル: `enhancement`）。
+
+### Phase 1：Firebase 基盤
+1. [ ] Firebase SDK 導入・プロジェクトセットアップ
+2. [ ] Google / Apple Sign In 実装
+3. [ ] 家族作成・招待コードによる参加フロー
+
+### Phase 2：Firestore 移行
+4. [ ] Firestore CRUD（`useState` → Firestore に移行）
+5. [ ] リアルタイムリスナー（`onSnapshot` で全端末に即時反映）
+
+### Phase 3：収益化
+6. [ ] Freemium 制限ロジック実装（家事5件・メンバー3人上限）
+7. [ ] RevenueCat + アプリ内課金（月額・年額サブスクリプション）
