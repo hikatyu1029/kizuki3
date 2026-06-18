@@ -2,6 +2,18 @@ import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import HomeScreen from '../index';
 
+// Firebase 未設定扱いにしてローカルフォールバックで動作させる
+jest.mock('@/lib/firebase', () => ({ isFirebaseConfigured: false, db: null, auth: null }));
+
+jest.mock('@/context/auth-context', () => ({
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+  useAuthContext: () => ({ user: null, loading: false }),
+}));
+
+jest.mock('@/hooks/use-chores', () => ({
+  useChores: () => ({ chores: [], loading: false, addChore: jest.fn(), markDone: jest.fn() }),
+}));
+
 describe('HomeScreen', () => {
   it('初期データの家事が表示される', () => {
     render(<HomeScreen />);

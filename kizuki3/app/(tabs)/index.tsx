@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, FlatList, Pressable } from 'react-native';
+import { StyleSheet, View, FlatList, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ChoreCard, type Chore } from '@/components/ui/chore-card';
 import { AddChoreModal } from '@/components/ui/add-chore-modal';
+import { useAuthContext } from '@/context/auth-context';
+import { useChores } from '@/hooks/use-chores';
+import { isFirebaseConfigured } from '@/lib/firebase';
 
-// Simple sample data for MVP. Later persist with AsyncStorage / Zustand.
+// Firebase 未設定時のフォールバック用サンプルデータ
 const initialChores: Chore[] = [
   {
     id: '1',
@@ -49,21 +52,36 @@ function offsetDate(daysAgo: number) {
 }
 
 export default function HomeScreen() {
-  const [chores, setChores] = useState<Chore[]>(initialChores);
+  const { user } = useAuthContext();
+  const { chores: firestoreChores, loading, addChore, markDone } = useChores(user?.familyId ?? null);
+
+  // Firebase 未設定時はローカル state で動作
+  const [localChores, setLocalChores] = useState<Chore[]>(initialChores);
   const [modalVisible, setModalVisible] = useState(false);
 
-  function handleComplete(id: string) {
-    const today = new Date().toISOString().slice(0, 10);
-    setChores((prev) => prev.map((c) => (c.id === id ? { ...c, lastDoneDate: today, lastDoneBy: 'あなた' } : c)));
+  const chores = isFirebaseConfigured ? firestoreChores : localChores;
+
+  async function handleComplete(id: string) {
+    if (isFirebaseConfigured) {
+      await markDone(id, user?.displayName ?? 'あなた');
+    } else {
+      const today = new Date().toISOString().slice(0, 10);
+      setLocalChores((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, lastDoneDate: today, lastDoneBy: 'あなた' } : c)),
+      );
+    }
   }
 
-  function handleAdd(chore: Omit<Chore, 'id'>) {
-    const id = String(Date.now());
-    setChores((prev) => [{ id, ...chore }, ...prev]);
+  async function handleAdd(data: Omit<Chore, 'id'>) {
+    if (isFirebaseConfigured) {
+      await addChore(data);
+    } else {
+      setLocalChores((prev) => [{ id: String(Date.now()), ...data }, ...prev]);
+    }
   }
 
   return (
-    <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={styles.container}>
         <View style={styles.headerRow}>
           <ThemedText type="title">家事感謝アプリ</ThemedText>
@@ -72,12 +90,18 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <FlatList
-          data={chores}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => <ChoreCard chore={item} onPress={() => handleComplete(item.id)} />}
-        />
+        {loading ? (
+          <ActivityIndicator style={styles.loading} />
+        ) : (
+          <FlatList
+            data={chores}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            renderItem={({ item }) => (
+              <ChoreCard chore={item} onPress={() => handleComplete(item.id)} />
+            )}
+          />
+        )}
 
         <AddChoreModal
           visible={modalVisible}
@@ -90,10 +114,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
+  container: { flex: 1, padding: 16 },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -108,7 +129,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  list: {
-    paddingBottom: 24,
-  },
+  list: { paddingBottom: 24 },
+  loading: { flex: 1 },
 });
